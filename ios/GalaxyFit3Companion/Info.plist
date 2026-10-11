@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.galaxyfit3companion.GalaxyFit3Companion</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0.0</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Galaxy Fit3 Companion connects with your Samsung Galaxy Fit3 (SM-R390) over Bluetooth to stream continuous heart rate data and monitor health metrics.</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>Galaxy Fit3 Companion discovers and communicates with your Samsung Galaxy Fit3 device.</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Galaxy Fit3 Companion reads existing heart rate measurements to prevent duplicate entries when syncing your fitness sessions.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Galaxy Fit3 Companion writes your continuous heart rate measurements recorded by your Samsung Galaxy Fit3 into Apple Health.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>bluetooth-central</string>
+	</array>
+	<key>UILaunchScreen</key>
+	<dict/>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+</dict>
+</plist>

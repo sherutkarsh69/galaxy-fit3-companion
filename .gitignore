@@ -1,0 +1,31 @@
+# Python / Bleak
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+*.log
+fit3_report_*.json
+fit3_report_*.txt
+
+# Build Artifacts
+build/
+DerivedData/
+*.xcarchive
+*.ipa
+Payload/
+
+# Xcode / Apple
+*.xcodeproj/*
+!*.xcodeproj/project.pbxproj
+*.xcworkspace/*
+!*.xcworkspace/contents.xcworkspacedata
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini

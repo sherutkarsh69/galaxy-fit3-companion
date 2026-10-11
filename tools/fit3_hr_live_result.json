@@ -1,0 +1,147 @@
+{
+  "target": "74:19:0A:A5:39:8C",
+  "connected": true,
+  "samples_count": 20,
+  "samples": [
+    {
+      "time": 10.62,
+      "bpm": 72,
+      "contact": true,
+      "rr": [],
+      "raw": "0648"
+    },
+    {
+      "time": 11.38,
+      "bpm": 72,
+      "contact": true,
+      "rr": [],
+      "raw": "0648"
+    },
+    {
+      "time": 12.51,
+      "bpm": 71,
+      "contact": true,
+      "rr": [],
+      "raw": "0647"
+    },
+    {
+      "time": 13.3,
+      "bpm": 71,
+      "contact": true,
+      "rr": [],
+      "raw": "0647"
+    },
+    {
+      "time": 14.49,
+      "bpm": 70,
+      "contact": true,
+      "rr": [],
+      "raw": "0646"
+    },
+    {
+      "time": 15.29,
+      "bpm": 70,
+      "contact": true,
+      "rr": [],
+      "raw": "0646"
+    },
+    {
+      "time": 16.49,
+      "bpm": 70,
+      "contact": true,
+      "rr": [],
+      "raw": "0646"
+    },
+    {
+      "time": 17.27,
+      "bpm": 69,
+      "contact": true,
+      "rr": [],
+      "raw": "0645"
+    },
+    {
+      "time": 18.47,
+      "bpm": 69,
+      "contact": true,
+      "rr": [],
+      "raw": "0645"
+    },
+    {
+      "time": 19.27,
+      "bpm": 69,
+      "contact": true,
+      "rr": [],
+      "raw": "0645"
+    },
+    {
+      "time": 20.45,
+      "bpm": 69,
+      "contact": true,
+      "rr": [],
+      "raw": "0645"
+    },
+    {
+      "time": 21.25,
+      "bpm": 69,
+      "contact": true,
+      "rr": [],
+      "raw": "0645"
+    },
+    {
+      "time": 22.44,
+      "bpm": 69,
+      "contact": true,
+      "rr": [],
+      "raw": "0645"
+    },
+    {
+      "time": 23.23,
+      "bpm": 69,
+      "contact": true,
+      "rr": [],
+      "raw": "0645"
+    },
+    {
+      "time": 24.42,
+      "bpm": 69,
+      "contact": true,
+      "rr": [],
+      "raw": "0645"
+    },
+    {
+      "time": 25.22,
+      "bpm": 69,
+      "contact": true,
+      "rr": [],
+      "raw": "0645"
+    },
+    {
+      "time": 26.42,
+      "bpm": 70,
+      "contact": true,
+      "rr": [],
+      "raw": "0646"
+    },
+    {
+      "time": 27.21,
+      "bpm": 70,
+      "contact": true,
+      "rr": [],
+      "raw": "0646"
+    },
+    {
+      "time": 28.4,
+      "bpm": 70,
+      "contact": true,
+      "rr": [],
+      "raw": "0646"
+    },
+    {
+      "time": 29.2,
+      "bpm": 70,
+      "contact": true,
+      "rr": [],
+      "raw": "0646"
+    }
+  ]
+}
