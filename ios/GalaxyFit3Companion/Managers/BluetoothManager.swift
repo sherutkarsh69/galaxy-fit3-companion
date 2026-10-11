@@ -42,7 +42,6 @@ public final class BluetoothManager: NSObject, ObservableObject {
             delegate: self,
             queue: nil,
             options: [
-                CBCentralManagerOptionRestoreIdentifierKey: restoreIdentifier,
                 CBCentralManagerOptionShowPowerAlertKey: true
             ]
         )

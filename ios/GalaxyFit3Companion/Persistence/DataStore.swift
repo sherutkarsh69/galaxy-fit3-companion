@@ -137,7 +137,11 @@ public final class DataStore: ObservableObject {
         do {
             self.modelContainer = try ModelContainer(for: schema, configurations: [configuration])
         } catch {
-            fatalError("Failed to initialize SwiftData ModelContainer: \(error.localizedDescription)")
+            if let fallback = try? ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)]) {
+                self.modelContainer = fallback
+            } else {
+                fatalError("Failed to initialize SwiftData ModelContainer: \(error.localizedDescription)")
+            }
         }
     }
 

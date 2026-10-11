@@ -13,6 +13,8 @@ fit3_report_*.txt
 
 # Build Artifacts
 build/
+build_artifacts/
+*.ips
 DerivedData/
 *.xcarchive
 *.ipa
