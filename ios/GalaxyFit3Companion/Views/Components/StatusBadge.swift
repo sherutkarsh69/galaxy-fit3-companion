@@ -22,6 +22,8 @@ public struct StatusBadge: View {
             Text(state.statusText)
                 .font(.system(size: 13, weight: .medium))
                 .foregroundColor(state.statusColor)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 5)

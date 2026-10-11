@@ -36,6 +36,18 @@ public final class HealthKitManager: ObservableObject {
             return false
         }
 
+        // Verify required Info.plist purpose strings before calling HealthKit to prevent unhandled NSException
+        guard Bundle.main.object(forInfoDictionaryKey: "NSHealthShareUsageDescription") != nil,
+              Bundle.main.object(forInfoDictionaryKey: "NSHealthUpdateUsageDescription") != nil else {
+            LogStore.shared.log(
+                level: .warning,
+                category: "HealthKitManager",
+                message: "HealthKit usage descriptions missing in Info.plist. Skipping HealthKit to prevent crash."
+            )
+            self.authorizationError = "HealthKit permissions not configured in app bundle"
+            return false
+        }
+
         let writeTypes: Set<HKSampleType> = [heartRateType]
         let readTypes: Set<HKObjectType> = [
             heartRateType,

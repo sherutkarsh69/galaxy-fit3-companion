@@ -84,6 +84,9 @@ jobs:
 
           if [ -n "$APP_PATH" ] && [ -d "$APP_PATH" ]; then
             echo "Found bundle at: $APP_PATH"
+            echo "Injecting curated Info.plist with Bluetooth and HealthKit descriptions..."
+            cp ios/GalaxyFit3Companion/Info.plist "$APP_PATH/Info.plist"
+            plutil -p "$APP_PATH/Info.plist"
             echo "Copying to Payload directory..."
             cp -R "$APP_PATH" build/ipa/Payload/
             cd build/ipa
@@ -95,6 +98,22 @@ jobs:
             find build/derived_data -maxdepth 4
             exit 1
           fi
+
+      - name: Verify Privacy Keys in Packaged IPA
+        run: |
+          python3 -c '
+          import zipfile, plistlib
+          with zipfile.ZipFile("build/artifacts/GalaxyFit3Companion.ipa") as z:
+              data = z.read("Payload/GalaxyFit3Companion.app/Info.plist")
+              pl = plistlib.loads(data)
+              assert "NSBluetoothAlwaysUsageDescription" in pl, "Missing NSBluetoothAlwaysUsageDescription"
+              assert "NSHealthShareUsageDescription" in pl, "Missing NSHealthShareUsageDescription"
+              assert "NSHealthUpdateUsageDescription" in pl, "Missing NSHealthUpdateUsageDescription"
+              print("SUCCESS: Verified Info.plist contains all required privacy descriptions:")
+              for k, v in pl.items():
+                  if "Usage" in k or "Background" in k:
+                      print(f"  {k}: {v}")
+          '
 
       - name: Upload GalaxyFit3Companion.ipa Artifact
         uses: actions/upload-artifact@v4

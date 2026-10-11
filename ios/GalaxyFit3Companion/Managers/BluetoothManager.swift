@@ -34,8 +34,9 @@ public final class BluetoothManager: NSObject, ObservableObject {
     private let maxRetries: Int = 3
     private var lastTargetPeripheralUUID: UUID?
     private let restoreIdentifier = "com.galaxyfit3companion.bluetooth.restore"
-    private let knownSavedUUIDKey = "fit3_last_connected_device_uuid"
+    private var knownSavedUUIDKey = "fit3_last_connected_device_uuid"
     private var cancellables = Set<AnyCancellable>()
+    private var pendingScanOnPowerOn: Bool = false
 
     /// Known standard and Samsung GATT services used to query peripherals already paired in iOS Settings
     public static let candidateServiceUUIDs: [CBUUID] = [
@@ -137,13 +138,22 @@ public final class BluetoothManager: NSObject, ObservableObject {
     }
 
     public func startScanning(timeout: TimeInterval = 20.0) {
+        guard centralManager != nil else { return }
+
         guard centralManager.state == .poweredOn else {
             LogStore.shared.log(
                 level: .warning,
                 category: "BluetoothManager",
-                message: "Cannot scan: Bluetooth is in state \(centralManager.state.rawValue)"
+                message: "Scan requested while Bluetooth is in state \(centralManager.state.rawValue)"
             )
-            updateState(.error("Bluetooth is not powered on"))
+            if centralManager.state == .unknown || centralManager.state == .resetting {
+                pendingScanOnPowerOn = true
+                updateState(.scanning)
+            } else if centralManager.state == .unauthorized {
+                updateState(.error("Bluetooth permission denied. Enable in iOS Settings."))
+            } else {
+                updateState(.error("Bluetooth is turned off"))
+            }
             return
         }
 
@@ -348,16 +358,22 @@ extension BluetoothManager: CBCentralManagerDelegate {
         switch central.state {
         case .poweredOn:
             LogStore.shared.log(level: .info, category: "BluetoothManager", message: "Bluetooth powered on")
+            if case .error = connectionState {
+                updateState(.idle)
+            }
             checkAndConnectSystemPeripherals()
-            if autoReconnect && connectedDevice == nil {
+            if pendingScanOnPowerOn {
+                pendingScanOnPowerOn = false
+                startScanning()
+            } else if autoReconnect && connectedDevice == nil {
                 reconnectToSavedDevice()
             }
         case .poweredOff:
             LogStore.shared.log(level: .warning, category: "BluetoothManager", message: "Bluetooth powered off")
-            updateState(.error("Bluetooth is turned off"))
+            updateState(.error("Bluetooth is turned off on iPhone"))
         case .unauthorized:
             LogStore.shared.log(level: .error, category: "BluetoothManager", message: "Bluetooth unauthorized")
-            updateState(.error("Bluetooth permission denied"))
+            updateState(.error("Bluetooth permission denied. Enable in iOS Settings."))
         case .unsupported:
             LogStore.shared.log(level: .error, category: "BluetoothManager", message: "Bluetooth unsupported")
             updateState(.error("BLE unsupported on this hardware"))

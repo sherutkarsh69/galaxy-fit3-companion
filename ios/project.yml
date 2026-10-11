@@ -28,10 +28,17 @@ targets:
           - "Tests/**"
     info:
       path: GalaxyFit3Companion/Info.plist
+      properties:
+        NSBluetoothAlwaysUsageDescription: "Galaxy Fit3 Companion connects with your Samsung Galaxy Fit3 (SM-R390) over Bluetooth to stream continuous heart rate data and monitor health metrics."
+        NSBluetoothPeripheralUsageDescription: "Galaxy Fit3 Companion discovers and communicates with your Samsung Galaxy Fit3 device."
+        NSHealthShareUsageDescription: "Galaxy Fit3 Companion reads existing heart rate measurements to prevent duplicate entries when syncing your fitness sessions."
+        NSHealthUpdateUsageDescription: "Galaxy Fit3 Companion writes your continuous heart rate measurements recorded by your Samsung Galaxy Fit3 into Apple Health."
+        UIBackgroundModes: ["bluetooth-central"]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.galaxyfit3companion.GalaxyFit3Companion
         PRODUCT_NAME: GalaxyFit3Companion
+        INFOPLIST_FILE: "GalaxyFit3Companion/Info.plist"
         ASSETCATALOG_COMPILER_APPICON_NAME: ""
         GENERATE_INFOPLIST_FILE: "NO"
     dependencies:
