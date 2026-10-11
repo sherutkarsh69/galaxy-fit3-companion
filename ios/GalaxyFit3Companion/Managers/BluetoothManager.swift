@@ -27,6 +27,7 @@ public final class BluetoothManager: NSObject, ObservableObject {
     // MARK: - Private State
     private var centralManager: CBCentralManager!
     private var activePeripheral: CBPeripheral?
+    private var discoveredPeripheralsMap: [UUID: CBPeripheral] = [:]
     private var scanTimer: Timer?
     private var connectionTimeoutTimer: Timer?
     private var retryCount: Int = 0
@@ -34,6 +35,17 @@ public final class BluetoothManager: NSObject, ObservableObject {
     private var lastTargetPeripheralUUID: UUID?
     private let restoreIdentifier = "com.galaxyfit3companion.bluetooth.restore"
     private let knownSavedUUIDKey = "fit3_last_connected_device_uuid"
+
+    /// Known standard and Samsung GATT services used to query peripherals already paired in iOS Settings
+    public static let candidateServiceUUIDs: [CBUUID] = [
+        HeartRateService.serviceUUID,
+        DeviceInfoService.serviceUUID,
+        CBUUID(string: "1800"), // Generic Access (present on all BLE devices)
+        CBUUID(string: "1801"), // Generic Attribute
+        CBUUID(string: "FD69"), // Samsung Service
+        CBUUID(string: "1A1A"), // Samsung Service
+        ProprietaryProtocol.authServiceUUID
+    ]
 
     public override init() {
         super.init()
@@ -57,7 +69,60 @@ public final class BluetoothManager: NSObject, ObservableObject {
 
     // MARK: - Public Actions
 
-    public func startScanning(timeout: TimeInterval = 15.0) {
+    /// Checks if the peripheral is already connected at the iOS system level (e.g. via iPhone Settings > Bluetooth)
+    @discardableResult
+    public func checkAndConnectSystemPeripherals() -> [Fit3Device] {
+        guard centralManager != nil, centralManager.state == .poweredOn else { return [] }
+
+        let connectedList = centralManager.retrieveConnectedPeripherals(withServices: Self.candidateServiceUUIDs)
+        LogStore.shared.log(
+            level: .info,
+            category: "BluetoothManager",
+            message: "System connected peripherals query found \(connectedList.count) device(s)"
+        )
+
+        var foundDevices: [Fit3Device] = []
+
+        for peripheral in connectedList {
+            self.discoveredPeripheralsMap[peripheral.identifier] = peripheral
+            let name = peripheral.name ?? "Galaxy Fit3"
+            var device = Fit3Device(
+                id: peripheral.identifier,
+                name: name,
+                rssi: -50,
+                lastConnected: Date()
+            )
+            device.isPairedInSystem = true
+            foundDevices.append(device)
+
+            if let idx = discoveredDevices.firstIndex(where: { $0.id == device.id }) {
+                discoveredDevices[idx] = device
+            } else {
+                discoveredDevices.insert(device, at: 0)
+            }
+
+            LogStore.shared.log(
+                level: .info,
+                category: "BluetoothManager",
+                message: "Detected system-paired device: \(name) (\(peripheral.identifier.uuidString.prefix(8)))"
+            )
+
+            // Auto-connect if we don't have an active connection and this is a Fit3
+            if connectedDevice == nil && (device.isGalaxyFit3 || connectedList.count == 1) {
+                LogStore.shared.log(
+                    level: .info,
+                    category: "BluetoothManager",
+                    message: "Auto-connecting to system-paired peripheral \(name)..."
+                )
+                connect(to: device)
+                return foundDevices
+            }
+        }
+
+        return foundDevices
+    }
+
+    public func startScanning(timeout: TimeInterval = 20.0) {
         guard centralManager.state == .poweredOn else {
             LogStore.shared.log(
                 level: .warning,
@@ -72,17 +137,23 @@ public final class BluetoothManager: NSObject, ObservableObject {
         isScanning = true
         discoveredDevices.removeAll()
 
-        // Scan for devices advertising Heart Rate Service (0x180D) or all nearby devices
-        let servicesToScan: [CBUUID] = [HeartRateService.serviceUUID]
+        // 1. First immediately check if the band is already connected in iOS Settings
+        let systemDevices = checkAndConnectSystemPeripherals()
+        if connectedDevice != nil {
+            return
+        }
+
+        // 2. Scan for ALL nearby BLE peripherals without filtering advertising service UUIDs
+        // (Galaxy Fit3 advertises with Samsung manufacturer data, not 0x180D in adv payload)
         centralManager.scanForPeripherals(
-            withServices: servicesToScan,
+            withServices: nil,
             options: [CBCentralManagerScanOptionAllowDuplicatesKey: false]
         )
 
         LogStore.shared.log(
             level: .info,
             category: "BluetoothManager",
-            message: "Started BLE scanning with timeout \(Int(timeout))s"
+            message: "Started wide BLE scanning with timeout \(Int(timeout))s (system devices found: \(systemDevices.count))"
         )
 
         scanTimer?.invalidate()
@@ -116,17 +187,34 @@ public final class BluetoothManager: NSObject, ObservableObject {
         self.lastTargetPeripheralUUID = device.id
         UserDefaults.standard.set(device.id.uuidString, forKey: knownSavedUUIDKey)
 
+        // 1. Check in-memory map from scan / system check
+        if let target = discoveredPeripheralsMap[device.id] {
+            initiateConnection(to: target)
+            return
+        }
+
+        // 2. Check system-connected peripherals
+        let connectedList = centralManager.retrieveConnectedPeripherals(withServices: Self.candidateServiceUUIDs)
+        if let target = connectedList.first(where: { $0.identifier == device.id }) {
+            self.discoveredPeripheralsMap[target.identifier] = target
+            initiateConnection(to: target)
+            return
+        }
+
+        // 3. Check known peripherals by identifier
         let knownPeripherals = centralManager.retrievePeripherals(withIdentifiers: [device.id])
         if let target = knownPeripherals.first {
+            self.discoveredPeripheralsMap[target.identifier] = target
             initiateConnection(to: target)
-        } else {
-            LogStore.shared.log(
-                level: .warning,
-                category: "BluetoothManager",
-                message: "Target peripheral not cached by CBCentralManager, scanning..."
-            )
-            startScanning()
+            return
         }
+
+        LogStore.shared.log(
+            level: .warning,
+            category: "BluetoothManager",
+            message: "Target peripheral not cached by CBCentralManager, scanning..."
+        )
+        startScanning()
     }
 
     public func disconnect() {
@@ -237,6 +325,7 @@ extension BluetoothManager: CBCentralManagerDelegate {
         switch central.state {
         case .poweredOn:
             LogStore.shared.log(level: .info, category: "BluetoothManager", message: "Bluetooth powered on")
+            checkAndConnectSystemPeripherals()
             if autoReconnect && connectedDevice == nil {
                 reconnectToSavedDevice()
             }
@@ -279,6 +368,8 @@ extension BluetoothManager: CBCentralManagerDelegate {
     }
 
     public func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String: Any], rssi RSSI: NSNumber) {
+        self.discoveredPeripheralsMap[peripheral.identifier] = peripheral
+
         let name = advertisementData[CBAdvertisementDataLocalNameKey] as? String
             ?? peripheral.name
             ?? "Unknown Device"
@@ -289,7 +380,7 @@ extension BluetoothManager: CBCentralManagerDelegate {
             adSummary[k] = String(describing: v)
         }
 
-        let device = Fit3Device(
+        var device = Fit3Device(
             id: peripheral.identifier,
             name: name,
             rssi: RSSI.intValue,
@@ -300,11 +391,15 @@ extension BluetoothManager: CBCentralManagerDelegate {
         if let idx = discoveredDevices.firstIndex(where: { $0.id == device.id }) {
             discoveredDevices[idx] = device
         } else {
-            discoveredDevices.append(device)
+            if device.isGalaxyFit3 {
+                discoveredDevices.insert(device, at: 0)
+            } else {
+                discoveredDevices.append(device)
+            }
             LogStore.shared.log(
                 level: .info,
                 category: "BluetoothManager",
-                message: "Discovered: \(device.name) (\(device.id)), RSSI: \(RSSI)"
+                message: "Discovered: \(device.name) (\(device.id.uuidString.prefix(8))), RSSI: \(RSSI)"
             )
         }
     }
@@ -325,14 +420,11 @@ extension BluetoothManager: CBCentralManagerDelegate {
         LogStore.shared.log(
             level: .info,
             category: "BluetoothManager",
-            message: "Successfully connected to \(peripheral.name ?? "Device"). Discovering services..."
+            message: "Successfully connected to \(peripheral.name ?? "Device"). Discovering all services..."
         )
 
-        peripheral.discoverServices([
-            HeartRateService.serviceUUID,
-            DeviceInfoService.serviceUUID,
-            ProprietaryProtocol.authServiceUUID
-        ])
+        // Pass nil to discover ALL GATT services without restriction
+        peripheral.discoverServices(nil)
     }
 
     public func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
@@ -414,12 +506,12 @@ extension BluetoothManager: CBPeripheralDelegate {
 
         if let characteristics = service.characteristics {
             for characteristic in characteristics {
-                // Heart Rate Service
-                if service.uuid == HeartRateService.serviceUUID {
+                // Heart Rate Service (0x180D) or Measurement Characteristic (0x2A37)
+                if service.uuid == HeartRateService.serviceUUID || characteristic.uuid == HeartRateService.measurementCharUUID {
                     heartRateService.configure(peripheral: peripheral, characteristic: characteristic)
                 }
 
-                // Device Info Service
+                // Device Info Service (0x180A)
                 if service.uuid == DeviceInfoService.serviceUUID {
                     peripheral.readValue(for: characteristic)
                 }
@@ -453,8 +545,8 @@ extension BluetoothManager: CBPeripheralDelegate {
             return
         }
 
-        // Heart rate notifications
-        if characteristic.service?.uuid == HeartRateService.serviceUUID {
+        // Heart rate notifications (match by characteristic UUID 0x2A37 or service UUID 0x180D)
+        if characteristic.uuid == HeartRateService.measurementCharUUID || characteristic.service?.uuid == HeartRateService.serviceUUID {
             heartRateService.handleValueUpdate(characteristic: characteristic, peripheralName: peripheral.name ?? "Galaxy Fit3")
         }
 
@@ -492,7 +584,7 @@ extension BluetoothManager: CBPeripheralDelegate {
             return
         }
 
-        if characteristic.service?.uuid == HeartRateService.serviceUUID {
+        if characteristic.uuid == HeartRateService.measurementCharUUID || characteristic.service?.uuid == HeartRateService.serviceUUID {
             heartRateService.handleNotificationStateUpdate(characteristic: characteristic)
         }
     }

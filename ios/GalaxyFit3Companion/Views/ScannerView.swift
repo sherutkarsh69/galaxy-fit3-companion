@@ -76,11 +76,30 @@ public struct ScannerView: View {
                                 .font(.system(size: 16, weight: .medium))
                                 .foregroundColor(.secondary)
 
+                            VStack(spacing: 8) {
+                                Text("Connected in iPhone Settings > Bluetooth?")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundColor(.white.opacity(0.85))
+
+                                Button(action: {
+                                    bluetoothManager.checkAndConnectSystemPeripherals()
+                                }) {
+                                    Label("Connect Paired Fit3", systemImage: "link.badge.plus")
+                                        .font(.system(size: 14, weight: .semibold))
+                                        .foregroundColor(.white)
+                                        .padding(.horizontal, 20)
+                                        .padding(.vertical, 10)
+                                        .background(Color.green.opacity(0.85))
+                                        .clipShape(Capsule())
+                                }
+                            }
+                            .padding(.top, 8)
+
                             if !bluetoothManager.isScanning {
                                 Button(action: {
                                     bluetoothManager.startScanning()
                                 }) {
-                                    Label("Start Scanning", systemImage: "arrow.clockwise")
+                                    Label("Scan Nearby Devices", systemImage: "arrow.clockwise")
                                         .font(.system(size: 15, weight: .semibold))
                                         .foregroundColor(.white)
                                         .padding(.horizontal, 24)
@@ -88,6 +107,7 @@ public struct ScannerView: View {
                                         .background(Color(red: 0.0, green: 0.83, blue: 1.0))
                                         .clipShape(Capsule())
                                 }
+                                .padding(.top, 6)
                             }
                             Spacer()
                         }
@@ -120,6 +140,16 @@ public struct ScannerView: View {
                                                         .padding(.horizontal, 6)
                                                         .padding(.vertical, 2)
                                                         .background(Color(red: 0.0, green: 0.83, blue: 1.0))
+                                                        .clipShape(Capsule())
+                                                }
+
+                                                if device.isPairedInSystem {
+                                                    Text("iOS Paired")
+                                                        .font(.system(size: 10, weight: .bold))
+                                                        .foregroundColor(.white)
+                                                        .padding(.horizontal, 6)
+                                                        .padding(.vertical, 2)
+                                                        .background(Color.green)
                                                         .clipShape(Capsule())
                                                 }
                                             }
@@ -161,7 +191,21 @@ public struct ScannerView: View {
                     }
 
                     // Bottom controls
-                    HStack(spacing: 16) {
+                    HStack(spacing: 12) {
+                        Button(action: {
+                            bluetoothManager.checkAndConnectSystemPeripherals()
+                        }) {
+                            HStack {
+                                Image(systemName: "link")
+                                Text("Link Paired")
+                            }
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(.white)
+                            .frame(width: 130, height: 52)
+                            .background(Color.green.opacity(0.85))
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                        }
+
                         Button(action: {
                             if bluetoothManager.isScanning {
                                 bluetoothManager.stopScanning()
@@ -171,9 +215,9 @@ public struct ScannerView: View {
                         }) {
                             HStack {
                                 Image(systemName: bluetoothManager.isScanning ? "stop.fill" : "arrow.clockwise")
-                                Text(bluetoothManager.isScanning ? "Stop Scanning" : "Scan Again")
+                                Text(bluetoothManager.isScanning ? "Stop" : "Scan Nearby")
                             }
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(.system(size: 15, weight: .semibold))
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .frame(height: 52)

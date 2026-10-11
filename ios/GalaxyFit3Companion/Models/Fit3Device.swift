@@ -42,8 +42,11 @@ public struct Fit3Device: Identifiable, Codable, Equatable, Hashable {
         self.advertisementDataSummary = advertisementDataSummary
     }
 
+    public var isPairedInSystem: Bool = false
+
     public var isGalaxyFit3: Bool {
-        return name.contains("Galaxy Fit3") || name.contains("SM-R390")
+        let lower = name.lowercased()
+        return lower.contains("fit3") || lower.contains("r390") || lower.contains("galaxy fit") || lower.contains("fit 3")
     }
 
     public var displayName: String {

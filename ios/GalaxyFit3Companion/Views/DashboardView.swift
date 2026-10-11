@@ -95,6 +95,21 @@ public struct DashboardView: View {
                         .font(.system(size: 11, design: .monospaced))
                         .foregroundColor(.secondary)
                 }
+            } else {
+                Button(action: {
+                    bluetoothManager.checkAndConnectSystemPeripherals()
+                    if bluetoothManager.connectedDevice == nil {
+                        bluetoothManager.startScanning()
+                    }
+                }) {
+                    Text("Connect")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(.black)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 6)
+                        .background(Color(red: 0.0, green: 0.83, blue: 1.0))
+                        .clipShape(Capsule())
+                }
             }
         }
         .padding(18)
