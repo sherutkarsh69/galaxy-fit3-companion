@@ -21,22 +21,26 @@ public final class HeartRateService: ObservableObject {
     public init() {}
 
     public func configure(peripheral: CBPeripheral, characteristic: CBCharacteristic) {
-        if characteristic.uuid == Self.measurementCharUUID {
+        let isMeasurement = characteristic.uuid == Self.measurementCharUUID || characteristic.uuid.uuidString.uppercased().contains("2A37")
+        let isLocation = characteristic.uuid == Self.bodySensorLocationCharUUID || characteristic.uuid.uuidString.uppercased().contains("2A38")
+
+        if isMeasurement {
             self.hrCharacteristic = characteristic
             peripheral.setNotifyValue(true, for: characteristic)
-            self.isMonitoring = characteristic.isNotifying
+            self.isMonitoring = true
             LogStore.shared.log(
                 level: .info,
                 category: "HeartRateService",
                 message: "Subscribed to Heart Rate Measurement (0x2A37)"
             )
-        } else if characteristic.uuid == Self.bodySensorLocationCharUUID {
+        } else if isLocation {
             peripheral.readValue(for: characteristic)
         }
     }
 
     public func handleNotificationStateUpdate(characteristic: CBCharacteristic) {
-        if characteristic.uuid == Self.measurementCharUUID {
+        let isMeasurement = characteristic.uuid == Self.measurementCharUUID || characteristic.uuid.uuidString.uppercased().contains("2A37")
+        if isMeasurement {
             self.isMonitoring = characteristic.isNotifying
             LogStore.shared.log(
                 level: .info,
@@ -49,7 +53,11 @@ public final class HeartRateService: ObservableObject {
     public func handleValueUpdate(characteristic: CBCharacteristic, peripheralName: String = "Galaxy Fit3") {
         guard let data = characteristic.value else { return }
 
-        if characteristic.uuid == Self.measurementCharUUID {
+        let isMeasurement = characteristic.uuid == Self.measurementCharUUID || characteristic.uuid.uuidString.uppercased().contains("2A37")
+        let isLocation = characteristic.uuid == Self.bodySensorLocationCharUUID || characteristic.uuid.uuidString.uppercased().contains("2A38")
+
+        if isMeasurement {
+            self.isMonitoring = true
             if let sample = HeartRateSample(from: data, source: peripheralName) {
                 self.latestHeartRate = sample
                 self.sensorContactDetected = sample.sensorContact
@@ -72,7 +80,7 @@ public final class HeartRateService: ObservableObject {
                     rawData: data
                 )
             }
-        } else if characteristic.uuid == Self.bodySensorLocationCharUUID {
+        } else if isLocation {
             parseBodySensorLocation(data)
         }
     }

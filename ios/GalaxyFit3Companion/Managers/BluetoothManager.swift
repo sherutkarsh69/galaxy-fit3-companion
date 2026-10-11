@@ -35,6 +35,7 @@ public final class BluetoothManager: NSObject, ObservableObject {
     private var lastTargetPeripheralUUID: UUID?
     private let restoreIdentifier = "com.galaxyfit3companion.bluetooth.restore"
     private let knownSavedUUIDKey = "fit3_last_connected_device_uuid"
+    private var cancellables = Set<AnyCancellable>()
 
     /// Known standard and Samsung GATT services used to query peripherals already paired in iOS Settings
     public static let candidateServiceUUIDs: [CBUUID] = [
@@ -57,6 +58,19 @@ public final class BluetoothManager: NSObject, ObservableObject {
                 CBCentralManagerOptionShowPowerAlertKey: true
             ]
         )
+
+        // Forward child service changes so SwiftUI views observing BluetoothManager re-render immediately
+        self.heartRateService.objectWillChange
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
+
+        self.gattServiceManager.objectWillChange
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
     }
 
     deinit {
@@ -240,6 +254,15 @@ public final class BluetoothManager: NSObject, ObservableObject {
         if let target = retrieved.first {
             initiateConnection(to: target)
         }
+    }
+
+    public func resubscribeHeartRate() {
+        guard let peripheral = activePeripheral else {
+            LogStore.shared.log(level: .warning, category: "BluetoothManager", message: "Cannot resubscribe: No active peripheral")
+            return
+        }
+        LogStore.shared.log(level: .info, category: "BluetoothManager", message: "Manually re-discovering GATT services and subscribing to Heart Rate...")
+        peripheral.discoverServices(nil)
     }
 
     // MARK: - Internal Helpers
@@ -507,7 +530,10 @@ extension BluetoothManager: CBPeripheralDelegate {
         if let characteristics = service.characteristics {
             for characteristic in characteristics {
                 // Heart Rate Service (0x180D) or Measurement Characteristic (0x2A37)
-                if service.uuid == HeartRateService.serviceUUID || characteristic.uuid == HeartRateService.measurementCharUUID {
+                let isHRMeasurement = characteristic.uuid == HeartRateService.measurementCharUUID || characteristic.uuid.uuidString.uppercased().contains("2A37")
+                let isHRService = service.uuid == HeartRateService.serviceUUID || service.uuid.uuidString.uppercased().contains("180D")
+
+                if isHRMeasurement || isHRService {
                     heartRateService.configure(peripheral: peripheral, characteristic: characteristic)
                 }
 
@@ -546,7 +572,10 @@ extension BluetoothManager: CBPeripheralDelegate {
         }
 
         // Heart rate notifications (match by characteristic UUID 0x2A37 or service UUID 0x180D)
-        if characteristic.uuid == HeartRateService.measurementCharUUID || characteristic.service?.uuid == HeartRateService.serviceUUID {
+        let isHRMeasurement = characteristic.uuid == HeartRateService.measurementCharUUID || characteristic.uuid.uuidString.uppercased().contains("2A37")
+        let isHRService = characteristic.service?.uuid == HeartRateService.serviceUUID || characteristic.service?.uuid.uuidString.uppercased().contains("180D") == true
+
+        if isHRMeasurement || isHRService {
             heartRateService.handleValueUpdate(characteristic: characteristic, peripheralName: peripheral.name ?? "Galaxy Fit3")
         }
 

@@ -4,16 +4,15 @@ import Charts
 public struct HeartRateView: View {
     @ObservedObject var bluetoothManager: BluetoothManager
     @ObservedObject var healthKitManager: HealthKitManager
+    @ObservedObject var hrService: HeartRateService
+
     @State private var showingSyncAlert: Bool = false
     @State private var syncAlertMessage: String = ""
 
     public init(bluetoothManager: BluetoothManager, healthKitManager: HealthKitManager) {
         self.bluetoothManager = bluetoothManager
         self.healthKitManager = healthKitManager
-    }
-
-    private var hrService: HeartRateService {
-        bluetoothManager.heartRateService
+        self.hrService = bluetoothManager.heartRateService
     }
 
     private var sessionStats: (min: Int, max: Int, avg: Int) {
@@ -86,15 +85,27 @@ public struct HeartRateView: View {
                             if hrService.heartRateHistory.isEmpty {
                                 HStack {
                                     Spacer()
-                                    VStack(spacing: 8) {
+                                    VStack(spacing: 12) {
                                         Image(systemName: "waveform.path.ecg")
                                             .font(.system(size: 32))
                                             .foregroundColor(.secondary.opacity(0.5))
                                         Text("Waiting for live HR stream...")
                                             .font(.system(size: 13))
                                             .foregroundColor(.secondary)
+
+                                        Button(action: {
+                                            bluetoothManager.resubscribeHeartRate()
+                                        }) {
+                                            Label("Re-subscribe Stream", systemImage: "arrow.clockwise")
+                                                .font(.system(size: 12, weight: .semibold))
+                                                .foregroundColor(Color(red: 0.0, green: 0.83, blue: 1.0))
+                                                .padding(.horizontal, 16)
+                                                .padding(.vertical, 8)
+                                                .background(Color(red: 0.0, green: 0.83, blue: 1.0).opacity(0.15))
+                                                .clipShape(Capsule())
+                                        }
                                     }
-                                    .padding(.vertical, 36)
+                                    .padding(.vertical, 32)
                                     Spacer()
                                 }
                             } else {

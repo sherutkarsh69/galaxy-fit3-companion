@@ -3,6 +3,7 @@ import SwiftUI
 public struct DashboardView: View {
     @ObservedObject var bluetoothManager: BluetoothManager
     @ObservedObject var healthKitManager: HealthKitManager
+    @ObservedObject var hrService: HeartRateService
 
     @State private var isRefreshing: Bool = false
     @State private var todayStats: (minBPM: Int, maxBPM: Int, avgBPM: Int, count: Int) = (0, 0, 0, 0)
@@ -10,10 +11,7 @@ public struct DashboardView: View {
     public init(bluetoothManager: BluetoothManager, healthKitManager: HealthKitManager) {
         self.bluetoothManager = bluetoothManager
         self.healthKitManager = healthKitManager
-    }
-
-    private var hrService: HeartRateService {
-        bluetoothManager.heartRateService
+        self.hrService = bluetoothManager.heartRateService
     }
 
     public var body: some View {
@@ -37,6 +35,11 @@ public struct DashboardView: View {
 
                         // Live Heart Rate Card
                         heartRateCard
+
+                        // Sensor Tip Card
+                        if hrService.latestHeartRate == nil {
+                            hrSensorTipCard
+                        }
 
                         // Today's Stats Grid
                         todayStatsGrid
@@ -65,6 +68,30 @@ public struct DashboardView: View {
     }
 
     // MARK: - Subviews
+
+    private var hrSensorTipCard: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "hand.tap.fill")
+                .foregroundColor(Color(red: 0.0, green: 0.83, blue: 1.0))
+                .font(.system(size: 18))
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Tip: Trigger Band Measurement")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(.white)
+                Text("On your Fit3, swipe to the Heart Rate screen and tap Measure (or set HR to Continuous in watch Settings). Wear snug on your wrist.")
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+            }
+        }
+        .padding(14)
+        .background(Color(red: 0.09, green: 0.11, blue: 0.17))
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color(red: 0.0, green: 0.83, blue: 1.0).opacity(0.2), lineWidth: 1)
+        )
+    }
 
     private var connectionCard: some View {
         HStack(spacing: 16) {
@@ -185,9 +212,19 @@ public struct DashboardView: View {
                         .font(.system(size: 11, design: .monospaced))
                         .foregroundColor(.secondary)
                 } else {
-                    Text("Waiting for live sensor stream...")
-                        .font(.system(size: 12))
-                        .foregroundColor(.secondary)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Waiting for live sensor stream...")
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary)
+
+                        Button(action: {
+                            bluetoothManager.resubscribeHeartRate()
+                        }) {
+                            Label("Refresh Stream", systemImage: "arrow.clockwise")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundColor(Color(red: 0.0, green: 0.83, blue: 1.0))
+                        }
+                    }
                 }
             }
 
