@@ -106,10 +106,11 @@ jobs:
           with zipfile.ZipFile("build/artifacts/GalaxyFit3Companion.ipa") as z:
               data = z.read("Payload/GalaxyFit3Companion.app/Info.plist")
               pl = plistlib.loads(data)
+              assert not pl["CFBundleIdentifier"].startswith("$"), f"Unexpanded variable in CFBundleIdentifier: {pl['CFBundleIdentifier']}"
               assert "NSBluetoothAlwaysUsageDescription" in pl, "Missing NSBluetoothAlwaysUsageDescription"
               assert "NSHealthShareUsageDescription" in pl, "Missing NSHealthShareUsageDescription"
               assert "NSHealthUpdateUsageDescription" in pl, "Missing NSHealthUpdateUsageDescription"
-              print("SUCCESS: Verified Info.plist contains all required privacy descriptions:")
+              print(f"SUCCESS: Verified Info.plist contains valid bundle ID: {pl['CFBundleIdentifier']}")
               for k, v in pl.items():
                   if "Usage" in k or "Background" in k:
                       print(f"  {k}: {v}")
