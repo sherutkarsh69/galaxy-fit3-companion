@@ -8,7 +8,6 @@ public struct SettingsView: View {
 
     @State private var showingExportSheet: Bool = false
     @State private var exportPayload: String = ""
-    @State private var buzzedSuccess: Bool = false
 
     public init(bluetoothManager: BluetoothManager, healthKitManager: HealthKitManager) {
         self.bluetoothManager = bluetoothManager
@@ -26,11 +25,8 @@ public struct SettingsView: View {
                         // Section 1: Notifications & Alerts
                         notificationSettingsSection
 
-                        // Section 2: iPhone-to-Watch ANCS Guide
-                        watchNotificationGuideSection
-
-                        // Section 3: Band Controls (Buzz Watch)
-                        bandControlsSection
+                        // Section 2: Health & Device Integration Status
+                        deviceStatusSection
 
                         // Section 4: Daily Goals
                         goalsSection
@@ -152,9 +148,16 @@ public struct SettingsView: View {
                 UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                 notificationManager.sendTestNotification()
             }) {
-                Label("Send Test Notification to iPhone", systemImage: "bell.fill")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(Color(red: 0.0, green: 0.83, blue: 1.0))
+                HStack {
+                    Image(systemName: "bell.badge.fill")
+                    Text("Test iPhone Health Alert Now")
+                }
+                .font(.system(size: 13, weight: .bold))
+                .foregroundColor(.black)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .background(Color(red: 0.0, green: 0.83, blue: 1.0))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
             }
             .padding(.top, 4)
         }
@@ -163,102 +166,55 @@ public struct SettingsView: View {
         .clipShape(RoundedRectangle(cornerRadius: 18))
     }
 
-    private var watchNotificationGuideSection: some View {
+    private var deviceStatusSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Label("Calls & App Alerts on Watch", systemImage: "applewatch.radiowaves.left.and.right")
+            Label("Device & Feature Status", systemImage: "bolt.horizontal.circle.fill")
                 .font(.system(size: 15, weight: .bold))
                 .foregroundColor(.white)
 
             Divider().background(Color.white.opacity(0.08))
 
-            Text("To receive incoming phone calls, WhatsApp, and SMS alerts on your Galaxy Fit3 screen, ensure iOS system notification sharing is enabled:")
-                .font(.system(size: 12))
+            VStack(spacing: 10) {
+                statusRow(title: "Live Heart Rate", subtitle: "Continuous BLE streaming from Fit3", status: "Active", isGood: true)
+                statusRow(title: "Daily Steps & Movement", subtitle: "iPhone CoreMotion pedometer", status: "Ready", isGood: true)
+                statusRow(title: "Apple Health Sync", subtitle: "Writes HR & Energy to HealthKit", status: healthKitManager.isAuthorized ? "Enabled" : "Off", isGood: healthKitManager.isAuthorized)
+                statusRow(title: "Health Alerts", subtitle: "High HR & Goal alerts on iPhone", status: notificationManager.isAuthorized ? "Active" : "Off", isGood: notificationManager.isAuthorized)
+                statusRow(title: "Watch Screen Notifications", subtitle: "Hardware locked to Android by Samsung", status: "Phone Only", isGood: false)
+            }
+
+            Text("Samsung engineered the Galaxy Fit3 screen exclusively for Android's Galaxy Wearable app. Continuous heart rate, workouts, and smart alerts are seamlessly powered on your iPhone.")
+                .font(.system(size: 11))
                 .foregroundColor(.secondary)
-                .lineSpacing(3)
-
-            VStack(alignment: .leading, spacing: 8) {
-                stepRow(number: "1", text: "Open iPhone Settings > Bluetooth")
-                stepRow(number: "2", text: "Tap the ⓘ icon next to Galaxy Fit3")
-                stepRow(number: "3", text: "Turn ON 'Share System Notifications'")
-            }
-            .padding(12)
-            .background(Color.white.opacity(0.04))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-
-            Button(action: {
-                if let url = URL(string: UIApplication.openSettingsURLString) {
-                    UIApplication.shared.open(url)
-                }
-            }) {
-                HStack {
-                    Image(systemName: "gear")
-                    Text("Open iPhone Settings")
-                }
-                .font(.system(size: 13, weight: .bold))
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
-                .background(Color.white.opacity(0.1))
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-            }
+                .lineSpacing(2)
+                .padding(.top, 4)
         }
         .padding(18)
         .background(Color(red: 0.09, green: 0.11, blue: 0.17))
         .clipShape(RoundedRectangle(cornerRadius: 18))
     }
 
-    private func stepRow(number: String, text: String) -> some View {
-        HStack(spacing: 10) {
-            ZStack {
-                Circle()
-                    .fill(Color(red: 0.0, green: 0.83, blue: 1.0).opacity(0.2))
-                    .frame(width: 22, height: 22)
-                Text(number)
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundColor(Color(red: 0.0, green: 0.83, blue: 1.0))
+    private func statusRow(title: String, subtitle: String, status: String, isGood: Bool) -> some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(.white)
+                Text(subtitle)
+                    .font(.system(size: 10))
+                    .foregroundColor(.secondary)
             }
-            Text(text)
-                .font(.system(size: 12))
-                .foregroundColor(.white)
+            Spacer()
+            Text(status)
+                .font(.system(size: 10, weight: .bold))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3)
+                .background(isGood ? Color.green.opacity(0.2) : Color.white.opacity(0.08))
+                .foregroundColor(isGood ? .green : .secondary)
+                .clipShape(Capsule())
         }
+        .padding(.vertical, 2)
     }
 
-    private var bandControlsSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Label("Band Controls", systemImage: "waveform")
-                .font(.system(size: 15, weight: .bold))
-                .foregroundColor(.white)
-
-            Divider().background(Color.white.opacity(0.08))
-
-            Button(action: {
-                UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
-                bluetoothManager.triggerBandVibration()
-                withAnimation {
-                    buzzedSuccess = true
-                }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                    withAnimation {
-                        buzzedSuccess = false
-                    }
-                }
-            }) {
-                HStack {
-                    Image(systemName: buzzedSuccess ? "checkmark.circle.fill" : "bell.and.waveform.fill")
-                    Text(buzzedSuccess ? "Alert Sent to Band!" : "Buzz My Watch (Test Vibration)")
-                }
-                .font(.system(size: 14, weight: .bold))
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-                .background(buzzedSuccess ? Color.green : Color(red: 0.0, green: 0.83, blue: 1.0).opacity(0.85))
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-            }
-        }
-        .padding(18)
-        .background(Color(red: 0.09, green: 0.11, blue: 0.17))
-        .clipShape(RoundedRectangle(cornerRadius: 18))
-    }
 
     private var goalsSection: some View {
         VStack(alignment: .leading, spacing: 14) {

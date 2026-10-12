@@ -8,7 +8,7 @@ public struct DashboardView: View {
     @ObservedObject var workoutManager = WorkoutManager.shared
 
     @State private var todayStats: (minBPM: Int, maxBPM: Int, avgBPM: Int, count: Int) = (0, 0, 0, 0)
-    @State private var buzzedSuccess: Bool = false
+    @State private var syncedSuccess: Bool = false
 
     public init(bluetoothManager: BluetoothManager, healthKitManager: HealthKitManager) {
         self.bluetoothManager = bluetoothManager
@@ -261,23 +261,26 @@ public struct DashboardView: View {
 
     private var quickActionsBar: some View {
         HStack(spacing: 12) {
-            // Buzz My Watch Button
+            // Sync Steps & HealthKit Button
             Button(action: {
-                UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
-                bluetoothManager.triggerBandVibration()
+                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                stepTracker.refresh()
+                Task {
+                    await healthKitManager.syncUnsyncedSamples()
+                }
                 withAnimation {
-                    buzzedSuccess = true
+                    syncedSuccess = true
                 }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                     withAnimation {
-                        buzzedSuccess = false
+                        syncedSuccess = false
                     }
                 }
             }) {
                 HStack(spacing: 8) {
-                    Image(systemName: buzzedSuccess ? "waveform.badge.magnifyingglass" : "bell.and.waveform.fill")
+                    Image(systemName: syncedSuccess ? "checkmark.circle.fill" : "arrow.triangle.2.circlepath")
                         .foregroundColor(Color(red: 0.0, green: 0.83, blue: 1.0))
-                    Text(buzzedSuccess ? "Sent Alert!" : "Buzz Watch")
+                    Text(syncedSuccess ? "Synced!" : "Sync Health")
                         .font(.system(size: 13, weight: .bold))
                         .foregroundColor(.white)
                 }

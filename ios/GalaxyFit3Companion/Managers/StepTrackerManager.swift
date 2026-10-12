@@ -74,6 +74,7 @@ public final class StepTrackerManager: ObservableObject {
                 }
                 // Estimate active minutes: ~100 steps per active minute
                 self.activeMinutes = max(data.numberOfSteps.intValue / 105, 0)
+                NotificationManager.shared.evaluateStepGoal(currentSteps: self.todaySteps, goal: self.stepGoal)
             }
         }
     }
