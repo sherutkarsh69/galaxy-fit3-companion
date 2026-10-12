@@ -275,6 +275,39 @@ public final class BluetoothManager: NSObject, ObservableObject {
         peripheral.discoverServices(nil)
     }
 
+    /// Triggers physical alert/vibration on the Galaxy Fit3 via Samsung Find Device or Immediate Alert service
+    public func triggerBandVibration() {
+        guard let peripheral = activePeripheral else {
+            LogStore.shared.log(level: .warning, category: "BluetoothManager", message: "Cannot buzz band: No active peripheral connected")
+            return
+        }
+
+        var foundAlertChar = false
+        if let services = peripheral.services {
+            for service in services {
+                let uuidStr = service.uuid.uuidString.uppercased()
+                if uuidStr.contains("FD69") || uuidStr.contains("1802") || uuidStr.contains("1803") {
+                    if let characteristics = service.characteristics {
+                        for char in characteristics {
+                            if char.properties.contains(.write) || char.properties.contains(.writeWithoutResponse) {
+                                let payload = Data([0x02])
+                                let type: CBCharacteristicWriteType = char.properties.contains(.writeWithoutResponse) ? .withoutResponse : .withResponse
+                                peripheral.writeValue(payload, for: char, type: type)
+                                foundAlertChar = true
+                                LogStore.shared.log(level: .info, category: "BluetoothManager", message: "Dispatched vibration alert to characteristic \(char.uuid.uuidString)")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if !foundAlertChar {
+            peripheral.discoverServices([CBUUID(string: "FD69"), CBUUID(string: "1802")])
+            LogStore.shared.log(level: .info, category: "BluetoothManager", message: "Triggered alert service discovery on peripheral")
+        }
+    }
+
     // MARK: - Internal Helpers
 
     private func initiateConnection(to peripheral: CBPeripheral) {

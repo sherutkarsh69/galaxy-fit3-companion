@@ -66,6 +66,7 @@ public final class HeartRateService: ObservableObject {
                     self.heartRateHistory.removeFirst(self.heartRateHistory.count - maxHistoryCount)
                 }
                 DataStore.shared.saveHeartRateSample(sample)
+                NotificationManager.shared.evaluateHeartRateForAlert(bpm: sample.bpm)
                 LogStore.shared.log(
                     level: .info,
                     category: "HeartRateService",

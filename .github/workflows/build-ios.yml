@@ -110,6 +110,7 @@ jobs:
               assert "NSBluetoothAlwaysUsageDescription" in pl, "Missing NSBluetoothAlwaysUsageDescription"
               assert "NSHealthShareUsageDescription" in pl, "Missing NSHealthShareUsageDescription"
               assert "NSHealthUpdateUsageDescription" in pl, "Missing NSHealthUpdateUsageDescription"
+              assert "NSMotionUsageDescription" in pl, "Missing NSMotionUsageDescription"
               print(f"SUCCESS: Verified Info.plist contains valid bundle ID: {pl['CFBundleIdentifier']}")
               for k, v in pl.items():
                   if "Usage" in k or "Background" in k:

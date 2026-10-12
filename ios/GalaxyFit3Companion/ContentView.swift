@@ -19,11 +19,17 @@ public struct ContentView: View {
                 }
                 .tag(0)
 
+            SimpleWorkoutView(bluetoothManager: bluetoothManager)
+                .tabItem {
+                    Label("Workout", systemImage: "figure.run")
+                }
+                .tag(1)
+
             HeartRateView(bluetoothManager: bluetoothManager, healthKitManager: healthKitManager)
                 .tabItem {
                     Label("Heart Rate", systemImage: "heart.fill")
                 }
-                .tag(1)
+                .tag(2)
 
             Group {
                 if bluetoothManager.connectedDevice != nil {
@@ -35,13 +41,7 @@ public struct ContentView: View {
             .tabItem {
                 Label(bluetoothManager.connectedDevice != nil ? "Device" : "Find Fit3", systemImage: "applewatch")
             }
-            .tag(2)
-
-            DiagnosticsView(bluetoothManager: bluetoothManager)
-                .tabItem {
-                    Label("Diagnostics", systemImage: "waveform.path.ecg")
-                }
-                .tag(3)
+            .tag(3)
 
             SettingsView(bluetoothManager: bluetoothManager, healthKitManager: healthKitManager)
                 .tabItem {

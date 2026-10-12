@@ -33,6 +33,7 @@ targets:
         NSBluetoothPeripheralUsageDescription: "Galaxy Fit3 Companion discovers and communicates with your Samsung Galaxy Fit3 device."
         NSHealthShareUsageDescription: "Galaxy Fit3 Companion reads existing heart rate measurements to prevent duplicate entries when syncing your fitness sessions."
         NSHealthUpdateUsageDescription: "Galaxy Fit3 Companion writes your continuous heart rate measurements recorded by your Samsung Galaxy Fit3 into Apple Health."
+        NSMotionUsageDescription: "Galaxy Fit3 Companion tracks your daily steps, distance, and activity."
         UIBackgroundModes: ["bluetooth-central"]
     settings:
       base:
@@ -44,6 +45,8 @@ targets:
     dependencies:
       - sdk: CoreBluetooth.framework
       - sdk: HealthKit.framework
+      - sdk: CoreMotion.framework
+      - sdk: UserNotifications.framework
       - sdk: SwiftUI.framework
       - sdk: Combine.framework
 

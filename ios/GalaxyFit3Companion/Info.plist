@@ -28,6 +28,8 @@
 	<string>Galaxy Fit3 Companion reads existing heart rate measurements to prevent duplicate entries when syncing your fitness sessions.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Galaxy Fit3 Companion writes your continuous heart rate measurements recorded by your Samsung Galaxy Fit3 into Apple Health.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>Galaxy Fit3 Companion tracks your daily steps, distance, and activity.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>bluetooth-central</string>
