@@ -3,6 +3,7 @@ import Combine
 import UIKit
 
 /// Manages active workout tracking sessions, live duration, HR telemetry, and calorie calculations
+@MainActor
 public final class WorkoutManager: ObservableObject {
     public static let shared = WorkoutManager()
 
@@ -55,6 +56,7 @@ public final class WorkoutManager: ObservableObject {
         if let hrService = hrService {
             hrService.$latestHeartRate
                 .compactMap { $0?.bpm }
+                .receive(on: DispatchQueue.main)
                 .sink { [weak self] bpm in
                     self?.receiveBPM(bpm)
                 }
@@ -63,7 +65,9 @@ public final class WorkoutManager: ObservableObject {
 
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            self?.tickTimer()
+            Task { @MainActor in
+                self?.tickTimer()
+            }
         }
     }
 
