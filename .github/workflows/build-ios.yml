@@ -101,21 +101,22 @@ jobs:
 
       - name: Verify Privacy Keys in Packaged IPA
         run: |
-          python3 -c '
+          python3 << 'EOF'
           import zipfile, plistlib
           with zipfile.ZipFile("build/artifacts/GalaxyFit3Companion.ipa") as z:
               data = z.read("Payload/GalaxyFit3Companion.app/Info.plist")
               pl = plistlib.loads(data)
-              assert not pl["CFBundleIdentifier"].startswith("$"), f"Unexpanded variable in CFBundleIdentifier: {pl['CFBundleIdentifier']}"
+              bundle_id = pl.get("CFBundleIdentifier", "")
+              assert not bundle_id.startswith("$"), f"Unexpanded variable in CFBundleIdentifier: {bundle_id}"
               assert "NSBluetoothAlwaysUsageDescription" in pl, "Missing NSBluetoothAlwaysUsageDescription"
               assert "NSHealthShareUsageDescription" in pl, "Missing NSHealthShareUsageDescription"
               assert "NSHealthUpdateUsageDescription" in pl, "Missing NSHealthUpdateUsageDescription"
               assert "NSMotionUsageDescription" in pl, "Missing NSMotionUsageDescription"
-              print(f"SUCCESS: Verified Info.plist contains valid bundle ID: {pl['CFBundleIdentifier']}")
+              print(f"SUCCESS: Verified Info.plist contains valid bundle ID: {bundle_id}")
               for k, v in pl.items():
                   if "Usage" in k or "Background" in k:
                       print(f"  {k}: {v}")
-          '
+          EOF
 
       - name: Upload GalaxyFit3Companion.ipa Artifact
         uses: actions/upload-artifact@v4
