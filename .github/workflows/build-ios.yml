@@ -86,6 +86,10 @@ jobs:
             echo "Found bundle at: $APP_PATH"
             echo "Injecting curated Info.plist with Bluetooth and HealthKit descriptions..."
             cp ios/GalaxyFit3Companion/Info.plist "$APP_PATH/Info.plist"
+            plutil -replace CFBundleIdentifier -string "com.galaxyfit3companion.GalaxyFit3Companion" "$APP_PATH/Info.plist"
+            plutil -replace CFBundleExecutable -string "GalaxyFit3Companion" "$APP_PATH/Info.plist"
+            plutil -replace CFBundleName -string "GalaxyFit3Companion" "$APP_PATH/Info.plist"
+            plutil -replace CFBundleDevelopmentRegion -string "en" "$APP_PATH/Info.plist"
             plutil -p "$APP_PATH/Info.plist"
             echo "Copying to Payload directory..."
             cp -R "$APP_PATH" build/ipa/Payload/
